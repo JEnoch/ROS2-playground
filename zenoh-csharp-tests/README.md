@@ -17,14 +17,14 @@
 
 A simple teleop client publishing Twists via zenoh, bridged to ROS2.
 
- 1. Start the `turtlesim`:
-    ```bash
-    ros2 run turtlesim turtlesim_node
-    ```
+ 1. Start the turtlesim:
+      ```bash
+      ros2 run turtlesim turtlesim_node
+      ```
  2. Start the zenoh router:
-    ```bash
-    zenohd
-    ```
+      ```bash
+      zenohd
+      ```
  3. Start the zenoh/DDS bridge:
       ```bash
       dzd
@@ -37,22 +37,28 @@ A simple teleop client publishing Twists via zenoh, bridged to ROS2.
 
 **Notes**:
 
-By default Ros2Teleop publishes Twist messages on topic `/rt/turtle1/cmd_vel`. This can be changed using the `-tc` option:
+See all options accepted by Ros2Teleop with:
+  ```bash
+  dotnet run -p Ros2Teleop.csproj -- -h
+  ```
+
+By default Ros2Teleop publishes Twist messages on topic `/rt/turtle1/cmd_vel` (for turtlesim).
+For other robot, change the topic using the `-tc` option:
   ```bash
   dotnet run -p Ros2Teleop.csproj -- -tc /rt/my_robot/cmd_vel
   ```
 
-The both zenoh router and Teleop can be deployed in different networks than the robot. Only the zenoh/DDS bridge has to run in the same network than the robot (for DDS communication via UDP multicast).  
+Both zenoh router and Teleop can be deployed in different networks than the robot. Only the zenoh/DDS bridge has to run in the same network than the robot (for DDS communication via UDP multicast).  
 For instance, you can:
  * deploy the zenoh router in a cloud on a public IP with port 7447 open
  * configure the zenoh bridge to connect this remote zenoh router:
-   ```bash
-   dzd -m client -e tcp/<cloud_ip>:7447
-   ```
+     ```bash
+     dzd -m client -e tcp/<cloud_ip>:7447
+     ```
  * configure Ros2Teleop to connect this remote zenoh router:
-  ```bash
-  dotnet run -p Ros2Teleop.csproj -- -m client -e tcp/<cloud_ip>:7447
-  ```
+    ```bash
+    dotnet run -p Ros2Teleop.csproj -- -m client -e tcp/<cloud_ip>:7447
+    ```
 
 
 ---
