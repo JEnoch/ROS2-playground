@@ -26,7 +26,8 @@ class Teleop
     private double _linearScale;
     private double _angularScale;
 
-    private Teleop(Dictionary<string, string> zenohConf, String cmdTopic, String outTopic, double linearScale, double angularScale) {
+    private Teleop(Dictionary<string, string> zenohConf, String cmdTopic, String outTopic, double linearScale, double angularScale)
+    {
         // initiate logging
         Zenoh.Zenoh.InitLogger();
 
@@ -85,7 +86,7 @@ class Teleop
 
     private void run()
     {
-        Console.WriteLine("Waiting commands with arrow keys. Press ESC to stop.");
+        Console.WriteLine("Waiting commands with arrow keys or space bar to stop. Press ESC to quit.");
         ConsoleKeyInfo cki;
         do
         {
@@ -112,10 +113,16 @@ class Teleop
                         PubTwist(0.0, -1.0);
                         break;
                     }
+                case ConsoleKey.Spacebar:
+                    {
+                        PubTwist(0.0, 0.0);
+                        break;
+                    }
                 default: break;
             }
-
         } while (cki.Key != ConsoleKey.Escape);
+        // Stop robot at exit
+        PubTwist(0.0, 0.0);
     }
 
 
@@ -163,11 +170,11 @@ public class ExampleArgs
     [ArgShortcut("to"), ArgDefaultValue("/rt/rosout"), ArgDescription("The 'rosout' ROS2 topic")]
     public string outTopic { get; set; }
 
-    [ArgShortcut("x"), ArgDefaultValue(2.0), ArgDescription("The angular scale.")]
-    public float angularScale { get; set; }
+    [ArgShortcut("a"), ArgDefaultValue(2.0), ArgDescription("The angular scale.")]
+    public double angularScale { get; set; }
 
-    [ArgShortcut("a"), ArgDefaultValue(2.0), ArgDescription("The linear scale.")]
-    public float linearScale { get; set; }
+    [ArgShortcut("x"), ArgDefaultValue(2.0), ArgDescription("The linear scale.")]
+    public double linearScale { get; set; }
 
     public Dictionary<string, string> GetConf()
     {

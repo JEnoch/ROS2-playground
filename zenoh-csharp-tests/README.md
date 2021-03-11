@@ -2,6 +2,7 @@
 
 ## **Requirements**
 
+ * .NET 5.0 (required by `CSCDR` - `zenoh-csharp` supports `netstandard2.0` framework minimum)
  * A [zenoh router](http://zenoh.io/docs/getting-started/quick-test/)
  * The [zenoh/DDS bridge](https://github.com/eclipse-zenoh/zenoh-plugin-dds#trying-it-out)
  * [zenoh-csharp](https://github.com/eclipse-zenoh/zenoh-csharp) 
