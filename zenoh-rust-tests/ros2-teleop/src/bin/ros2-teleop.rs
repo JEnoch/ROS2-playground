@@ -140,8 +140,8 @@ async fn main() {
             sample = subscriber.stream().next().fuse() => {
                 let sample = sample.unwrap();
                 // copy to be removed if possible
-                let buf = sample.payload.to_vec();
-                match cdr::deserialize::<Log>(&buf) {
+                // let buf = sample.payload.to_vec();
+                match cdr::deserialize_from::<_, Log, _>(sample.payload, cdr::size::Infinite) {
                     Ok(log) => {
                         println!("{}", log);
                         std::io::stdout().execute(MoveToColumn(0)).unwrap();
