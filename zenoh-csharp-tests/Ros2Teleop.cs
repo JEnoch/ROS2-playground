@@ -164,10 +164,10 @@ public class ExampleArgs
     [ArgShortcut("c"), ArgDescription("A configuration file.")]
     public string config { get; set; }
 
-    [ArgShortcut("tc"), ArgDefaultValue("/rt/turtle1/cmd_vel"), ArgDescription("The 'cmd_vel' ROS2 topic")]
+    [ArgShortcut("cmd_vel"), ArgDefaultValue("/rt/turtle1/cmd_vel"), ArgDescription("The 'cmd_vel' ROS2 topic")]
     public string cmdTopic { get; set; }
 
-    [ArgShortcut("to"), ArgDefaultValue("/rt/rosout"), ArgDescription("The 'rosout' ROS2 topic")]
+    [ArgShortcut("rosout"), ArgDefaultValue("/rt/rosout"), ArgDescription("The 'rosout' ROS2 topic")]
     public string outTopic { get; set; }
 
     [ArgShortcut("a"), ArgDefaultValue(2.0), ArgDescription("The angular scale.")]

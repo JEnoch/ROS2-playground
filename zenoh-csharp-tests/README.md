@@ -16,7 +16,7 @@
 
 ### Ros2Teleop
 
-A simple teleop client publishing Twists via zenoh, bridged to ROS2.
+A simple teleop client publishing Twists and to subscribing to Logs via zenoh, bridged to ROS2.
 
  1. Start the turtlesim:
       ```bash
@@ -44,9 +44,9 @@ See all options accepted by Ros2Teleop with:
   ```
 
 By default Ros2Teleop publishes Twist messages on topic `/rt/turtle1/cmd_vel` (for turtlesim).
-For other robot, change the topic using the `-tc` option:
+For other robot, change the topic using the `-cmd_vel` option:
   ```bash
-  dotnet run -p Ros2Teleop.csproj -- -tc /rt/my_robot/cmd_vel
+  dotnet run -p Ros2Teleop.csproj -- -cmd_vel /rt/my_robot/cmd_vel
   ```
 
 Both zenoh router and Teleop can be deployed in different networks than the robot. Only the zenoh/DDS bridge has to run in the same network than the robot (for DDS communication via UDP multicast).  
