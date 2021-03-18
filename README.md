@@ -5,3 +5,5 @@ Some tests and examples around [ROS2](https://index.ros.org/doc/ros2/).
 
  - In Rust: [zenoh-rust-tests](https://github.com/JEnoch/ROS2-playground/tree/master/zenoh-rust-tests)
  - In C#: [zenoh-csharp-tests](https://github.com/JEnoch/ROS2-playground/tree/master/zenoh-csharp-tests)
+ - In Python: [zenoh-python-tests](https://github.com/JEnoch/ROS2-playground/tree/master/zenoh-python-tests)
+ - In Javascript using the zenoh REST API: [zenoh-rest-tests](https://github.com/JEnoch/ROS2-playground/tree/master/zenoh-rest-tests)
