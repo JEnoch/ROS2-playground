@@ -22,9 +22,10 @@ use crossterm::{
 use futures::prelude::*;
 use futures::select;
 use serde_derive::{Deserialize, Serialize};
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
-use zenoh::net::*;
 use zenoh::Properties;
+use zenoh::*;
 
 #[derive(Serialize, PartialEq)]
 struct Vector3 {
@@ -66,7 +67,7 @@ impl fmt::Display for Log {
     }
 }
 
-async fn pub_twist(session: &Session, cmd_key: &ResKey, linear: f64, angular: f64) {
+async fn pub_twist(workspace: &Workspace<'_>, cmd_path: &Path, linear: f64, angular: f64) {
     let twist = Twist {
         linear: Vector3 {
             x: linear,
@@ -80,8 +81,9 @@ async fn pub_twist(session: &Session, cmd_key: &ResKey, linear: f64, angular: f6
         },
     };
 
+    // Encode Twist and put it as a Raw Value
     let encoded = cdr::serialize::<_, _, CdrLe>(&twist, Infinite).unwrap();
-    if let Err(e) = session.write(cmd_key, encoded.into()).await {
+    if let Err(e) = workspace.put(cmd_path, encoded.into()).await {
         log::warn!("Error writing to zenoh: {}", e);
     }
 }
@@ -94,21 +96,17 @@ async fn main() {
     let (config, cmd_vel, rosout, linear_scale, angular_scale) = parse_args();
 
     println!("Opening session...");
-    let session = open(config.into()).await.unwrap();
+    let zenoh = Zenoh::new(config.into()).await.unwrap();
+    let workspace = zenoh.workspace(None).await.unwrap();
 
     println!("Subscriber on {}", rosout);
-    let sub_info = SubInfo {
-        reliability: Reliability::Reliable,
-        mode: SubMode::Push,
-        period: None,
-    };
-    let mut subscriber = session
-        .declare_subscriber(&rosout.into(), &sub_info)
+    let mut rosout_stream = workspace
+        .subscribe(&rosout.try_into().unwrap())
         .await
         .unwrap();
 
-    // ResKey for publication on "cmd_vel" topic
-    let cmd_key = ResKey::from(cmd_vel);
+    // Path for publication on "cmd_vel" topic
+    let cmd_path = Path::try_from(cmd_vel).unwrap();
 
     // Keyboard event read loop, sending each to an async_std channel
     // Note: enable raw mode for direct processing of key pressed, without having to hit ENTER...
@@ -136,17 +134,18 @@ async fn main() {
     // Events management loop
     loop {
         select!(
-            // On sample received by the subsriber
-            sample = subscriber.stream().next().fuse() => {
-                let sample = sample.unwrap();
-                // copy to be removed if possible
-                // let buf = sample.payload.to_vec();
-                match cdr::deserialize_from::<_, Log, _>(sample.payload, cdr::size::Infinite) {
-                    Ok(log) => {
-                        println!("{}", log);
-                        std::io::stdout().execute(MoveToColumn(0)).unwrap();
+            // On change received by the subscriber
+            change = rosout_stream.next().fuse() => {
+                // DDS data are published as Value::Raw by the zenoh/DDS bridge
+                if let Some(Value::Raw(_, buf)) = change.and_then(|c| c.value) {
+                    // decode the Log
+                    match cdr::deserialize_from::<_, Log, _>(buf, cdr::size::Infinite) {
+                        Ok(log) => {
+                            println!("{}", log);
+                            std::io::stdout().execute(MoveToColumn(0)).unwrap();
+                        }
+                        Err(e) => log::warn!("Error decoding Log: {}", e),
                     }
-                    Err(e) => log::warn!("Error decoding Log: {}", e),
                 }
             },
 
@@ -154,19 +153,19 @@ async fn main() {
             event = key_receiver.recv().fuse() => {
                 match event {
                     Ok(Event::Key(KeyEvent { code: KeyCode::Up, modifiers: _ })) => {
-                        pub_twist(&session, &cmd_key, 1.0 * linear_scale, 0.0).await
+                        pub_twist(&workspace, &cmd_path, 1.0 * linear_scale, 0.0).await
                     },
                     Ok(Event::Key(KeyEvent { code: KeyCode::Down, modifiers: _ })) => {
-                        pub_twist(&session, &cmd_key, -1.0 * linear_scale, 0.0).await
+                        pub_twist(&workspace, &cmd_path, -1.0 * linear_scale, 0.0).await
                     },
                     Ok(Event::Key(KeyEvent { code: KeyCode::Left, modifiers: _ })) => {
-                        pub_twist(&session, &cmd_key, 0.0, 1.0 * angular_scale).await
+                        pub_twist(&workspace, &cmd_path, 0.0, 1.0 * angular_scale).await
                     },
                     Ok(Event::Key(KeyEvent { code: KeyCode::Right, modifiers: _ })) => {
-                        pub_twist(&session, &cmd_key, 0.0, -1.0 * angular_scale).await
+                        pub_twist(&workspace, &cmd_path, 0.0, -1.0 * angular_scale).await
                     },
                     Ok(Event::Key(KeyEvent { code: KeyCode::Char(' '), modifiers: _ })) => {
-                        pub_twist(&session, &cmd_key, 0.0, 0.0).await
+                        pub_twist(&workspace, &cmd_path, 0.0, 0.0).await
                     },
                     Ok(Event::Key(KeyEvent { code: KeyCode::Esc, modifiers: _ })) |
                     Ok(Event::Key(KeyEvent { code: KeyCode::Char('q'), modifiers: _ })) => {
@@ -185,7 +184,7 @@ async fn main() {
     }
 
     // Stop robot at exit
-    pub_twist(&session, &cmd_key, 0.0, 0.0).await;
+    pub_twist(&workspace, &cmd_path, 0.0, 0.0).await;
 
     crossterm::terminal::disable_raw_mode().unwrap();
 }
