@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Zenoh" Version="0.0.1" />
+    <PackageReference Include="Zenoh" Version="0.0.4" />
     <PackageReference Include="CSCDR" Version="0.0.1" />
     <PackageReference Include="PowerArgs" Version="3.6.0" />
   </ItemGroup>

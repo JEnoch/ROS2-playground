@@ -19,9 +19,10 @@ using Zenoh;
 using CSCDR;
 using PowerArgs;
 
-class Teleop
+class Teleop: IDisposable
 {
     private Zenoh.Net.Session _session;
+    private Zenoh.Net.Subscriber _subscriber;
     private Zenoh.Net.ResKey _cmdKey;
     private double _linearScale;
     private double _angularScale;
@@ -35,7 +36,7 @@ class Teleop
         _session = Zenoh.Net.Session.Open(zenohConf);
 
         Console.WriteLine("Subscribing on {0}", outTopic);
-        _session.DeclareSubscriber(
+        _subscriber = _session.DeclareSubscriber(
             Zenoh.Net.ResKey.RName(outTopic),
             new Zenoh.Net.SubInfo(),
             OutCallback);
@@ -44,6 +45,14 @@ class Teleop
         _cmdKey = Zenoh.Net.ResKey.RName(cmdTopic);
         _linearScale = linearScale;
         _angularScale = angularScale;
+    }
+
+    public void Dispose() => Dispose(true);
+
+    protected virtual void Dispose(bool disposing)
+    {
+        // Calling Session.Dispose() closes the session gracefully, undeclaring the Subscribers
+        _session.Dispose();
     }
 
     private void PubTwist(double linear, double angular)
@@ -137,6 +146,7 @@ class Teleop
 
             var teleop = new Teleop(conf, arguments.cmdTopic, arguments.outTopic, arguments.linearScale, arguments.angularScale);
             teleop.run();
+            teleop.Dispose();
         }
         catch (ArgException)
         {
