@@ -17,7 +17,7 @@ from datetime import datetime
 import argparse
 import curses
 import zenoh
-from zenoh.net import config, SubInfo, Reliability, SubMode
+from zenoh import Zenoh, Workspace, Value
 from pycdr import cdr
 from pycdr.types import int8, int32, uint32, float64
 
@@ -112,23 +112,24 @@ def main(stdscr):
     zenoh.init_logger()
 
     print("Openning session...")
-    session = zenoh.net.open(conf)
+    z = Zenoh(conf)
+    workspace = z.workspace()
+
+
+    def rosout_callback(change):
+        if change.value is not None:
+            log = Log.deserialize(change.value.get_content())
+            print('[{}.{}] [{}]: {}'.format(log.stamp.sec,
+                                            log.stamp.nanosec, log.name, log.msg))
 
     print("Subscriber on '{}'...".format(rosout))
-    sub_info = SubInfo(Reliability.Reliable, SubMode.Push)
-
-    def rosout_callback(sample):
-        log = Log.deserialize(sample.payload)
-        print('[{}.{}] [{}]: {}'.format(log.stamp.sec,
-                                        log.stamp.nanosec, log.name, log.msg))
-
-    sub = session.declare_subscriber(rosout, sub_info, rosout_callback)
+    sub = workspace.subscribe(rosout, rosout_callback)
 
     def pub_twist(linear, angular):
         print("Pub twist: {} - {}".format(linear, angular))
         t = Twist(linear=Vector3(x=linear, y=0.0, z=0.0),
                   angular=Vector3(x=0.0, y=0.0, z=angular))
-        session.write(cmd_vel, t.serialize())
+        workspace.put(cmd_vel, t.serialize())
 
     while True:
         c = stdscr.getch()
@@ -143,8 +144,8 @@ def main(stdscr):
         elif c == 27 or c == ord('q'):
             break
 
-    sub.undeclare()
-    session.close()
+    sub.close()
+    zenoh.close()
 
 
 curses.wrapper(main)
