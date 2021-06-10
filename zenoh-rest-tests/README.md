@@ -20,30 +20,13 @@ via the zenoh REST API, bridged to ROS2.
       ```bash
       ros2 run turtlesim turtlesim_node
       ```
- 2. Start the zenoh router with a memory storage (to store the HTML page and serve it via the REST API):
+ 2. Start the zenoh/DDS bridge, activating its REST API:
       ```bash
-      zenohd --mem-storage="/demo/**"
+      zenoh-bridge-dds --rest-plugin
       ```
- 3. Start the zenoh/DDS bridge:
-      ```bash
-      dzd
-      ```
- 4. Put the ros2-teleop.html into zenoh under `/demo/ros2-teleop`
-      ```bash
-      curl -X PUT -H 'Content-Type: text/html' -d "`cat ros2-teleop.html`" http://localhost:8000/demo/ros2-teleop
-      ```
- 5. Open http://localhost:8000/demo/ros2-teleop
- 6. Use the arrows keys to drive the robot
-
-**Notes**:
-
-Both zenoh router and Teleop can be deployed in different networks than the robot. Only the zenoh/DDS bridge has to run in the same network than the robot (for DDS communication via UDP multicast).  
-For instance, you can:
- * deploy the zenoh router in a cloud on a public IP with port 7447 and 8000 open
- * configure the zenoh bridge to connect this remote zenoh router:
-     ```bash
-     dzd -m client -e tcp/<cloud_ip>:7447
-     ```
- * Put and get the HTML page on `http://<cloud_ip>:8000/demo/ros2-teleop`
-
+ 5. Open the `ros2-teleop.html` file in a Web browser
+ 6. In this page:
+     - If needed, adapt the "URL of your zenoh-bridge-dds" to the host where your bridge is running
+     - Click on "Subscribe" button
+     - All the messages published on "/rt/rosout" via ROS2 should be displayed in the bottom box.
 
